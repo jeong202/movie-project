@@ -1,148 +1,105 @@
 <script setup>
-// import { ref, onMounted } from 'vue'
-// import axios from 'axios'
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import HeaderSection from '@/components/section/HeaderSection.vue';
+import FooterSection from '@/components/section/FooterSection.vue';
 
+const movies = ref([]);
+const searchKeyword = ref('');
 
+const fetchMovies = async (category) => {
+  let url = 'https://api.themoviedb.org/3/movie/popular';
 
-// const movies = ref([]);
-// const searchKeyword = ref('');
+  switch (category) {
+    case 'latest':
+      url = 'https://api.themoviedb.org/3/movie/now_playing';
+      break;
+    case 'popular':
+      url = 'https://api.themoviedb.org/3/movie/popular'
+      break;
+    case 'upcoming':
+      url = 'https://api.themoviedb.org/3/movie/upcoming'
+      break;
+    case 'toprated':
+      url = 'https://api.themoviedb.org/3/movie/top_rated'
+      break;
+  }
 
-// let url = 'https://api.themoviedb.org/3/movie/popular';
-// const fetchMovies = async (category) => {
-//   switch (category) {
-//     case 'now_playing':
-//       url = 'https://api.themoviedb.org/3/movie/now_playing';
-//       break;
+  try {
+    const response = await axios.get(url, {
+      params: {
+        api_key: 'dc1b4f859c38448e3c7d03daf3da75ec',
+        language: 'ko-KR',
+        page: '1'
+      }
+    });
+    movies.value = response.data.results;
+    console.log(response.data.results)
+  } catch (err) {
+    console.log(err)
+  }
+}
 
-//     case 'popular':
-//       url = 'https://api.themoviedb.org/3/movie/popular';
-//       break;
+const serachMovies = async () => {
+  try {
+    const response = await axios.get('https://api.themoviedb.org/3/search/movie', {
+      params: {
+        api_key: 'dc1b4f859c38448e3c7d03daf3da75ec',
+        language: 'ko-KR',
+        query: searchKeyword.value
+      }
+    });
+    movies.value = response.data.results;
+  } catch (err) {
+    console.error(err);
+  }
+}
 
-//     case 'upcoming':
-//       url = 'https://api.themoviedb.org/3/movie/upcoming';
-//       break;
-
-//     case 'top_rated':
-//       url = 'https://api.themoviedb.org/3/movie//top_rated';
-//       break;
-//   }
-
-//   try {
-//     const response = await axios.get(url, {
-//       params: {
-//         api_key: 'dc1b4f859c38448e3c7d03daf3da75ec',
-//         language: 'ko-KR',
-//         page: 1
-//       }
-//     });
-
-//     movies.value = response.data.results;
-//     console.log(movies);
-
-//   } catch (err) {
-//     console.log(err);
-//   }
-// };
-
-// const searchMovies = async () => {
-//   try {
-//     const response = await axios.get('https://api.themoviedb.org/3/search/movie', {
-//       params: {
-//         api_key: 'dc1b4f859c38448e3c7d03daf3da75ec',
-//         language: 'ko-KR',
-//         query: searchKeyword.value,
-//         page: 1
-//       }
-//     });
-//     movies.value = response.data.results;
-//     console.log(movies);
-
-//   } catch (err) {
-//     console.log(err);
-//   }
-// };
-
-// fetchMovies('now_playing'); // 최초 렌더링 시 popular 카테고리를 불러오도록 설정
-
-// onMounted(async () => {
-//   // 초기 페이지 로딩 시 최신 영화를 가져옴
-//   await fetchMovies('now_playing');
-// });
+onMounted(async () => {
+  await fetchMovies('latest');
+});
 </script>
 
 <template>
   <HeaderSection />
-  <!-- //header -->
-
   <main id="main" role="main">
     <div class="container">
       <div class="movie__inner">
-        <MovieSearch @onSearch="search" />
-        <MovieTag @onSearch="tags" />
-        <MovieCont />
+        <section class="movie__search">
+          <h2 class="blind">검색하기</h2>
+          <input type="search" v-model="searchKeyword" placeholder="검색어를 입력해주세요!" @keyup.enter="serachMovies">
+          <button type="submit" @click="serachMovies">검색</button>
+        </section>
+        <!-- //movie__search -->
+
+        <div class="movie__tag">
+          <ul>
+            <li><a href="#" @click="fetchMovies('latest')">최신 영화</a></li>
+            <li><a href="#" @click="fetchMovies('popular')">인기 영화</a></li>
+            <li><a href="#" @click="fetchMovies('upcoming')">개봉 예정</a></li>
+            <li><a href="#" @click="fetchMovies('toprated')">최고 평점</a></li>
+          </ul>
+        </div>
+        <!-- //movie__tag -->
+
+        <section class="movie__cont">
+          <h2 class="blind">영화</h2>
+          <div class="movie play__icon" v-for="movie in movies" :key="movie.id">
+            <a :href="'/detail/' + movie.id">
+              <img :src="'https://image.tmdb.org/t/p/w500' + movie.poster_path" :alt="movie.title">
+            </a>
+          </div>
+        </section>
+        <!-- //movie__cont -->
 
       </div>
     </div>
   </main>
-  <!-- //main -->
-
   <FooterSection />
-  <!-- //footer -->
 </template>
 
-<script>
-import HeaderSection from '@/components/section/HeaderSection.vue';
-import FooterSection from '@/components/section/FooterSection.vue';
 
-import MovieSearch from '@/components/contents/movieSearch.vue';
-import MovieTag from '@/components/contents/movieTag.vue';
-import MovieCont from '@/components/contents/movieCont.vue';
 
-export default {
-  name: "MovieHomePage",
-  components: {
-    HeaderSection,
-    FooterSection,
-    MovieSearch,
-    MovieTag,
-    MovieCont,
-  },
-  data() {
-    return {
-      movies: [],
-    }
-  },
-  methods: {
-    async search(query) {
-      try {
-        const response = fetch(`https://api.themoviedb.org/3/search/movie?api_key=dc1b4f859c38448e3c7d03daf3da75ec&language:ko-KR&query=${query}`)
-        const result = (await response).json();
-        console.log(result)
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    async tag(query) {
-      try {
-        const response = fetch(`https://api.themoviedb.org/3/search/movie?api_key=dc1b4f859c38448e3c7d03daf3da75ec&language:ko-KR&query=${query}`)
-        const result = (await response).json();
-        console.log(result)
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    async content(query) {
-      try {
-        const response = fetch(`https://api.themoviedb.org/3/search/movie?api_key=dc1b4f859c38448e3c7d03daf3da75ec&language:ko-KR&query=${query}`)
-        const result = (await response).json();
-        console.log(result)
-      } catch (error) {
-        console.log(error)
-      }
-    },
-  },
-}
-</script>
 
 <style lang="scss">
 .movie__search {
@@ -150,7 +107,7 @@ export default {
   position: relative;
 
   input {
-    border: 1px solid var(--white);
+    border: 1px solid var(--black600);
     padding: 1rem 2rem;
     width: 100%;
     border-radius: 50px;
@@ -158,18 +115,15 @@ export default {
 
   button {
     position: absolute;
-    right: 60px;
-    top: 9px;
-    width: 85px;
-    height: 34px;
+    right: 6px;
+    top: 6px;
+    width: 40px;
+    height: 40px;
     background-color: var(--black);
-    color: var(--white);
-    border-radius: 10px;
+    color: #fff;
+    border-radius: 50%;
     cursor: pointer;
-
-    &:hover {
-      background-color: var(--black300);
-    }
+    font-size: 14px;
   }
 }
 
@@ -179,7 +133,7 @@ export default {
 
     li {
       a {
-        border: 1px solid var(--white);
+        border: 1px solid var(--black);
         padding: 0.5rem 1.3rem;
         display: inline-block;
         border-radius: 50px;
@@ -188,8 +142,8 @@ export default {
         margin-top: 20px;
 
         &:hover {
-          background-color: var(--white);
-          color: var(--black);
+          background-color: var(--black);
+          color: var(--white);
         }
       }
     }
@@ -206,6 +160,49 @@ export default {
     margin-bottom: 1.5%;
     background-color: #ccc;
   }
+}
 
+// 비디오 마우스 아이콘 효과
+.play__icon {
+  a {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    width: 100%;
+
+    &::before {
+      content: '';
+      width: 100%;
+      height: 100%;
+      background-color: #00000025;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transition: background-color 0.3s;
+    }
+
+    &:hover::before {
+      background-color: #00000000;
+    }
+
+    &::after {
+      z-index: 1000;
+      content: '';
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.5) url(../img/icon/play.svg) no-repeat center;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    &:hover::after {
+      opacity: 1;
+    }
+  }
 }
 </style>
